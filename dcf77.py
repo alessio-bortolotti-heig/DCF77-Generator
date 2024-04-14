@@ -71,12 +71,13 @@ def generate_am_modulated_signal(dcf77_bits, carrier_frequency=77500, sampling_r
     # Calculate the number of samples per bit
     samples_per_bit = int(sampling_rate * bit_duration)
     # Create a time array for the entire duration of the bits
-    t = np.linspace(0, 59, samples_per_bit * 59, endpoint=False)
+    t = np.linspace(0, 59 * bit_duration, int(samples_per_bit * 59), endpoint=False)
     # Generate the carrier wave
     carrier_wave = np.sin(2 * np.pi * carrier_frequency * t)
     # Initialize the modulated signal
     modulated_signal = np.zeros_like(t)
 
+    # Apply amplitude modulation based on DCF77 bit values
     for i, bit in enumerate(dcf77_bits):
         start_sample = i * samples_per_bit
         if bit == 0:
@@ -85,15 +86,14 @@ def generate_am_modulated_signal(dcf77_bits, carrier_frequency=77500, sampling_r
         else:
             # Reduce amplitude for the first 200ms for bit 1
             end_sample = start_sample + int(0.2 * sampling_rate)
+        
+        # Apply reduced amplitude
         modulated_signal[start_sample:end_sample] = carrier_wave[start_sample:end_sample] * 0.1
-
-    # Fill the rest of the signal with the full amplitude carrier wave
-    for i in range(59):
-        start_sample = i * samples_per_bit
-        end_sample = (i + 1) * samples_per_bit
-        modulated_signal[start_sample:end_sample] += carrier_wave[start_sample:end_sample] * 0.9
+        # Fill the rest of the second with full amplitude
+        modulated_signal[end_sample:(i + 1) * samples_per_bit] = carrier_wave[end_sample:(i + 1) * samples_per_bit] * 0.9
 
     return modulated_signal
+
 
 def save_to_wav(signal, sampling_rate=441000, filename='dcf77_time_signal.wav'):
     """
